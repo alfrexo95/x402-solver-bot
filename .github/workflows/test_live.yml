@@ -1,0 +1,19 @@
+name: Test Live Bot
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probar OpenAPI
+        run: |
+          echo "=== OPENAPI ==="
+          curl -s https://x402-solver-gateway.alfrexo95.workers.dev/openapi.json | head -c 500
+          
+      - name: Probar ruta de pago (debe dar 402)
+        run: |
+          echo ""
+          echo "=== RUTA DE PAGO ==="
+          curl -i -s -X POST https://x402-solver-gateway.alfrexo95.workers.dev/v1/scan/secrets \
+            -H "Content-Type: application/json" -d '{"text":"hola"}' | head -n 20
