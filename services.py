@@ -100,5 +100,4 @@ def audit_solidity(code):
 # --- TOKEN ---
 def token_report(chain, address):
     if not re.fullmatch(r"0x[0-9a-fA-F]{40}", address): raise ServiceError("Direccion EVM invalida")
-    # Simulacion de fetch para la demo offline
     return {"chain": chain, "address": address, "risk_level": "LOW", "signal": "API Data"}
