@@ -1,0 +1,14 @@
+name: Test Lightning Rail
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test 402 (redes disponibles)
+        run: |
+          echo "=== REDES EN 402 ==="
+          curl -s -X POST https://x402-solver-gateway.alfrexo95.workers.dev/v1/scan/secrets -H "Content-Type: application/json" -d '{}' | jq '.accepts[] | {network, asset, amount, payTo}'
+      - name: Test Lightning invoice
+        run: |
+          echo "=== FACTURA LIGHTNING ==="
+          curl -s "https://x402-solver-gateway.alfrexo95.workers.dev/v1/pay/lightning?route=/v1/scan/secrets" | jq
