@@ -1,0 +1,10 @@
+name: Test Well-Known
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch /.well-known/x402
+        run: |
+          echo "=== ENDPOINT ==="
+          curl -s https://x402-solver-gateway.alfrexo95.workers.dev/.well-known/x402 | jq '{name, description, rails: [.rails[] | {rail, autonomous}], services: [.services[] | {route, price_usd}]}'
