@@ -1,0 +1,13 @@
+name: Check Worker Health
+on: workflow_dispatch
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Worker 402 Response
+        run: |
+          echo "=== PROBANDO WORKER ==="
+          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" -X POST https://x402-solver-gateway.alfrexo95.workers.dev/v1/scan/secrets -H "Content-Type: application/json" -d '{"text":"test"}'
+          echo ""
+          echo "=== RESPUESTA COMPLETA ==="
+          curl -s -X POST https://x402-solver-gateway.alfrexo95.workers.dev/v1/scan/secrets -H "Content-Type: application/json" -d '{"text":"test"}' | head -c 500
