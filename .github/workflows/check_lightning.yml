@@ -1,0 +1,18 @@
+name: Check Lightning Endpoint
+on: workflow_dispatch
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Lightning (sin route)
+        run: |
+          echo "=== SIN ROUTE (debe dar 200, no 400) ==="
+          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" https://x402-solver-gateway.alfrexo95.workers.dev/v1/pay/lightning
+          echo ""
+          echo "=== RESPUESTA (lista de rutas) ==="
+          curl -s https://x402-solver-gateway.alfrexo95.workers.dev/v1/pay/lightning | head -c 500
+      - name: Test Lightning (con route)
+        run: |
+          echo ""
+          echo "=== CON ROUTE (debe dar 200 con factura) ==="
+          curl -s "https://x402-solver-gateway.alfrexo95.workers.dev/v1/pay/lightning?route=/v1/scan/secrets" | head -c 400
