@@ -1,0 +1,18 @@
+name: Test Fix 500
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test X-PAYMENT malformado (debe ser 400, no 500)
+        run: |
+          echo "=== X-PAYMENT malformado ==="
+          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" -X POST https://x402-solver-gateway.alfrexo95.workers.dev/v1/extract -H "Content-Type: application/json" -H "X-PAYMENT: no-es-base64-valido" -d '{"url":"https://example.com"}'
+          echo ""
+          echo "=== Respuesta ==="
+          curl -s -X POST https://x402-solver-gateway.alfrexo95.workers.dev/v1/extract -H "Content-Type: application/json" -H "X-PAYMENT: no-es-base64-valido" -d '{"url":"https://example.com"}'
+      - name: Test sin pago (debe ser 402)
+        run: |
+          echo ""
+          echo "=== Sin X-PAYMENT ==="
+          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" -X POST https://x402-solver-gateway.alfrexo95.workers.dev/v1/extract -H "Content-Type: application/json" -d '{"url":"https://example.com"}'
