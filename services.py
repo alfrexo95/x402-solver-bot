@@ -70,14 +70,22 @@ def html_to_markdown(html, base_url=""):
 
 def extract_url(url, max_chars=20000):
     if not url: raise ServiceError("falta 'url'")
-    _, _, body = http_get(url)
+    _, content_type, body = http_get(url)
+    ct = (content_type or "").split(";")[0].strip().lower()
+    if ct and not (ct.startswith("text/html") or ct.startswith("text/plain") or ct.startswith("application/xhtml")):
+        raise ServiceError(f"Content-Type no soportado: {ct}")
     md = html_to_markdown(body, url)
     return {"url": url, "markdown": md[:max_chars], "word_count": len(md[:max_chars].split())}
 
 # --- SECRETS ---
 _SECRETS = [
     ("aws_key", r"\bAKIA[0-9A-Z]{16}\b"),
+    ("aws_secret", r"(?i)aws(.{0,20})?(secret|access).{0,20}?['\"]([A-Za-z0-9/+=]{40})['\"]"),
     ("github_pat", r"\bghp_[A-Za-z0-9]{36}\b"),
+    ("github_pat_fine", r"\bgithub_pat_[A-Za-z0-9_]{82}\b"),
+    ("slack_token", r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"),
+    ("google_api_key", r"\bAIza[0-9A-Za-z_-]{35}\b"),
+    ("jwt", r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"),
     ("private_key", r"-----BEGIN (?:RSA )?PRIVATE KEY-----")
 ]
 def scan_secrets(text):
@@ -89,15 +97,25 @@ def scan_secrets(text):
     return {"safe_to_publish": not findings, "total": len(findings), "findings": findings}
 
 # --- SOLIDITY ---
+_SOLIDITY_RULES = [
+    (r"\btx\.origin\b", "HIGH", "tx.origin"),
+    (r"\bdelegatecall\b", "HIGH", "delegatecall"),
+    (r"\bselfdestruct\b", "MED", "selfdestruct"),
+    (r"\bassembly\b", "MED", "assembly"),
+    (r"\.send\s*\(", "MED", "send()"),
+    (r"\bblock\.timestamp\b", "LOW", "block.timestamp"),
+]
 def audit_solidity(code):
     if not code: raise ServiceError("falta 'code'")
     issues = []
-    if "tx.origin" in code: issues.append({"severity": "HIGH", "issue": "tx.origin"})
-    if "delegatecall" in code: issues.append({"severity": "HIGH", "issue": "delegatecall"})
-    if ".call{" in code and "balances[" not in code: issues.append({"severity": "MED", "issue": "Reentrancy"})
+    for pat, sev, name in _SOLIDITY_RULES:
+        if re.search(pat, code):
+            issues.append({"severity": sev, "issue": name})
+    if re.search(r"\.call\s*\{", code) and "balances[" not in code:
+        issues.append({"severity": "MED", "issue": "Reentrancy"})
     return {"verdict": "REJECT" if any(i["severity"] == "HIGH" for i in issues) else "PASS", "issues": issues}
 
 # --- TOKEN ---
 def token_report(chain, address):
     if not re.fullmatch(r"0x[0-9a-fA-F]{40}", address): raise ServiceError("Direccion EVM invalida")
-    return {"chain": chain, "address": address, "risk_level": "LOW", "signal": "API Data"}
+    return {"chain": chain, "address": address, "risk_level": "UNKNOWN", "signal": "no external data"}
